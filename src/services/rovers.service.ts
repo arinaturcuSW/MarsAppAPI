@@ -1,11 +1,12 @@
 import {Response} from "express";
+import {PhotosParams} from "../types";
 
 const fetch = require('node-fetch');
 
 const API_KEY: string = 'qCIhKTwwGZYeEzsUisjqptL5yZg9dgNElGJYDBv0';
 const nasaRoversURL: string = 'https://api.nasa.gov/mars-photos/api/v1/rovers';
 
-const CameraEnum = {
+const CamerasEnum = {
     FHAZ: 'fhaz',
     RHAZ: 'rhaz',
     MAST: 'mast',
@@ -14,19 +15,59 @@ const CameraEnum = {
     MARDI: 'mardi',
     NAVCAM: 'navcam',
     PANCAM: 'pancam',
+    MINITES: 'minites'
+}
+
+const RoversEnum = {
+    CURIOSITY: 'curiosity',
+    OPPORTUNITY: 'opportunity',
+    SPIRIT: 'spirit'
 }
 
 async function getRovers() {
-    return await fetch(nasaRoversURL + '?api_key=' + API_KEY).then((res: Response) => res.json());
+    return await fetch(`${nasaRoversURL}?api_key=${API_KEY}`).then((res: Response) => res.json());
 }
 
-async function getRoverPhotos(roverName: string, cameraType: string) {
-    if(!Object.values(CameraEnum).find(cam => cam === cameraType)) {
+async function getRoverPhotos(params: PhotosParams) {
+    if (params.cameraType && !Object.values(CamerasEnum).find(cam => cam === params.cameraType)) {
         return {error: 'Camera type is not valid.'};
     }
 
-    return await fetch(nasaRoversURL + `/${roverName}/photos?sol=1000&camera=${cameraType}&page=1&api_key=${API_KEY}`)
-        .then((res: Response) => res.json());
+    if (!Object.values(RoversEnum).find(rover => rover === params.roverName)) {
+        return {error: 'Rover name is not valid.'};
+    }
+
+    let data: Object[] = [];
+
+    if (params.paginationStart && params.paginationEnd && params.paginationStart <= params.paginationEnd && !params.page) {
+        for (let page = params.paginationStart; page < params.paginationEnd; page++) {
+            const url = `${nasaRoversURL}/${params.roverName}/photos` +
+                `?sol=${params.sol}` +
+                `${params.cameraType ? `&camera=${params.cameraType}` : ''}` +
+                `${params.earthDate ? `&earth_date=${params.earthDate}` : ''}` +
+                `&page=${page}` +
+                `&api_key=${API_KEY}`;
+
+            const response = await fetch(url).then((res: Response) => res.json());
+            if (!response.photos) {
+                console.log(response);
+                continue;
+            }
+
+            data = [...data, response.photos];
+        }
+
+        return {photos: data};
+    }
+
+    const url = `${nasaRoversURL}/${params.roverName}/photos` +
+        `?sol=${params.sol}` +
+        `${params.cameraType ? `&camera=${params.cameraType}` : ''}` +
+        `${params.earthDate ? `&earth_date=${params.earthDate}` : ''}` +
+        `&page=${params.page}` +
+        `&api_key=${API_KEY}`;
+
+    return await fetch(url).then((res: Response) => res.json());
 }
 
 module.exports = {
