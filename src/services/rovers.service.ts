@@ -24,17 +24,25 @@ const RoversEnum = {
     SPIRIT: 'spirit'
 }
 
+async function getCameras() {
+    return Object.values(CamerasEnum);
+}
+
+async function getRoverNames() {
+    return Object.values(RoversEnum);
+}
+
 async function getRovers() {
     return await fetch(`${nasaRoversURL}?api_key=${API_KEY}`).then((res: Response) => res.json());
 }
 
 async function getRoverPhotos(params: PhotosParams) {
     if (params.cameraType && !Object.values(CamerasEnum).find(cam => cam === params.cameraType)) {
-        return {error: 'Camera type is not valid.'};
+        throw Error('Camera type is not valid.');
     }
 
     if (!Object.values(RoversEnum).find(rover => rover === params.roverName)) {
-        return {error: 'Rover name is not valid.'};
+        throw new Error('Rover name is not valid.')
     }
 
     let data: Object[] = [];
@@ -72,5 +80,7 @@ async function getRoverPhotos(params: PhotosParams) {
 
 module.exports = {
     getRovers,
-    getRoverPhotos
+    getRoverPhotos,
+    getRoverNames,
+    getCameras
 }

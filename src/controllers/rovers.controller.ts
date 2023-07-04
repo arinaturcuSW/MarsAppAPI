@@ -30,7 +30,27 @@ async function getRoverPhotos(req: Request, res: Response, next: NextFunction) {
     }
 }
 
+async function getRoverNames(req: Request, res: Response, next: NextFunction) {
+    try {
+        res.json(await rovers.getRoverNames());
+    } catch (err) {
+        console.error('Error when getting rover names');
+        next(err);
+    }
+}
+
+async function getCameras(req: Request, res: Response, next: NextFunction) {
+    try {
+        res.json(await rovers.getCameras());
+    } catch (err) {
+        console.error('Error when getting cameras');
+        next(err);
+    }
+}
+
 module.exports = {
     getRovers,
-    getRoverPhotos
+    getRoverPhotos,
+    getRoverNames,
+    getCameras
 };
